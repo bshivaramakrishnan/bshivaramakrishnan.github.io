@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enterprise Backup System — Shivaramakrishnan B</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --bg-elevated: #111113;
+    --bg-card: #161618;
+    --bg-card-hover: #1c1c1f;
+    --border: #2a2a2e;
+    --border-subtle: #1e1e22;
+    --text: #e8e8ec;
+    --text-muted: #8b8b95;
+    --text-dim: #55555e;
+    --accent: #00e599;
+    --accent-dim: #00e59920;
+    --accent-glow: #00e59940;
+    --orange: #ff6b35;
+    --blue: #4dabf7;
+    --purple: #b197fc;
+    --red: #ff6b6b;
+    --yellow: #ffd43b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Grid lines background */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(20px);
+    background: #0a0a0bcc;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .nav-brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .nav-brand span { color: var(--accent); }
+
+  .nav-links { display: flex; gap: 32px; }
+
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 100px;
+    position: relative;
+  }
+
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .hero-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 1.05;
+    font-weight: 400;
+    letter-spacing: -2px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--accent);
+    position: relative;
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 30px var(--accent-glow);
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--text-muted);
+    background: var(--bg-elevated);
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-subtle);
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1s;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-value span { color: var(--accent); font-weight: 300; }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 120px 0;
+    position: relative;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .section-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 400;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+  }
+
+  .section-desc {
+    color: var(--text-muted);
+    font-size: 16px;
+    max-width: 560px;
+    margin-bottom: 64px;
+  }
+
+  /* ── TECH STACK ── */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 80px;
+  }
+
+  .tech-tag {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    padding: 16px 20px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+  }
+
+  .tech-tag:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+  }
+
+  .tech-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── ARCHITECTURE ── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .arch-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 32px;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .arch-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .arch-card:hover {
+    border-color: var(--border);
+    background: var(--bg-card-hover);
+    transform: translateY(-4px);
+  }
+
+  .arch-card:hover::before { opacity: 1; }
+
+  .arch-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .arch-card h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .arch-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .arch-card .detail {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  /* ── DATA FLOW ── */
+  .flow-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .flow-container::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, var(--accent-dim), transparent 70%);
+    pointer-events: none;
+  }
+
+  .flow-steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .flow-step {
+    flex: 1;
+    text-align: center;
+    padding: 24px 16px;
+    position: relative;
+  }
+
+  .flow-step:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: var(--accent);
+    z-index: 2;
+  }
+
+  .flow-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .flow-label {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .flow-detail {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── DATA STRUCTURES ── */
+  .ds-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .ds-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .ds-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+  }
+
+  .ds-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .ds-purpose {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── CODE METRICS ── */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .metric-card:hover {
+    border-color: var(--border);
+    transform: translateY(-2px);
+  }
+
+  .metric-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .metric-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .metric-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── TEST RESULTS ── */
+  .test-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .test-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    transition: all 0.3s;
+  }
+
+  .test-item:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border);
+  }
+
+  .test-status {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #00e59918;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .test-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .test-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-dim);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* ── TERMINAL BLOCK ── */
+  .terminal {
+    background: #0c0c0e;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 48px;
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #141416;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: 8px;
+  }
+
+  .terminal-body {
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  .terminal-body .prompt { color: var(--accent); }
+  .terminal-body .cmd { color: var(--text); }
+  .terminal-body .comment { color: var(--text-dim); }
+  .terminal-body .output { color: var(--text-muted); }
+  .terminal-body .success { color: var(--accent); }
+  .terminal-body .flag { color: var(--orange); }
+
+  /* ── SKILLS ── */
+  .skills-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 48px;
+  }
+
+  .skill-group {
+    margin-bottom: 32px;
+  }
+
+  .skill-group:last-child { margin-bottom: 0; }
+
+  .skill-group-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .skill-tag {
+    padding: 8px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: all 0.3s;
+  }
+
+  .skill-tag:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 60px 0;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+
+  .footer-cta {
+    font-family: 'Instrument Serif', serif;
+    font-size: 36px;
+    font-weight: 400;
+    margin-bottom: 24px;
+  }
+
+  .footer-cta em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 16px;
+  }
+
+  .footer-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: color 0.3s;
+  }
+
+  .footer-links a:hover { color: var(--accent); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .container { padding: 0 24px; }
+    nav { padding: 16px 24px; }
+    .arch-grid { grid-template-columns: 1fr; }
+    .ds-grid { grid-template-columns: repeat(2, 1fr); }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .flow-steps { flex-direction: column; gap: 16px; }
+    .flow-step:not(:last-child)::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -12px; transform: translateX(-50%); }
+    .hero-stats { flex-wrap: wrap; gap: 32px; }
+    .nav-links { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .ds-grid { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: 1fr 1fr; }
+    .hero-actions { flex-direction: column; }
+    .tech-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand"><span>B.</span> Shivaramakrishnan</div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#testing">Testing</a>
+    <a href="https://github.com/bshivaramakrishnan/file-backup-system" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Systems Programming · C++17</div>
+    <h1 class="hero-title">Enterprise<br>Backup <em>System</em></h1>
+    <p class="hero-subtitle">
+      A chunk-based distributed backup architecture built from scratch in C++17. Features content-addressable deduplication, AES-256 encryption, multi-process orchestration via fork()/exec(), and custom data structures — zero external frameworks.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/bshivaramakrishnan/file-backup-system" target="_blank" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        View Source
+      </a>
+      <a href="#architecture" class="btn btn-outline">Explore Architecture</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-value">4,211<span>+</span></div>
+        <div class="stat-label">Lines of Code</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">23</div>
+        <div class="stat-label">Source Files</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">9<span>/</span>9</div>
+        <div class="stat-label">Tests Passing</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Warnings</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="overview">
+  <div class="container">
+    <div class="section-label reveal">Technology Stack</div>
+    <h2 class="section-title reveal">Built With</h2>
+    <div class="tech-grid reveal">
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--blue)"></div>C++17</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--accent)"></div>POSIX IPC</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--orange)"></div>OpenSSL</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--purple)"></div>SQLite3</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--yellow)"></div>LZ4</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--red)"></div>Zstandard</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--blue)"></div>fork()/exec()</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--accent)"></div>SHA-256</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--orange)"></div>AES-256-CBC</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--purple)"></div>Shared Memory</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--yellow)"></div>Semaphores</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--red)"></div>Linux / Make</div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-label reveal">System Design</div>
+    <h2 class="section-title reveal">Architecture</h2>
+    <p class="section-desc reveal">Nine interconnected modules forming a production-grade backup pipeline — each built from scratch with zero external frameworks.</p>
+
+    <div class="arch-grid">
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#00e59918; color:var(--accent);">⬡</div>
+        <h3>Chunk Store</h3>
+        <p>64KB fixed-size content-addressable blocks with SHA-256 hashing. Files split into chunks, stored by hash — identical data is never duplicated.</p>
+        <div class="detail">chunk_store.h · 268 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#ff6b3518; color:var(--orange);">⚙</div>
+        <h3>Multi-Process Orchestrator</h3>
+        <p>Spawns isolated worker processes via fork()/exec() with max 4 concurrent. Parent reaps children via waitpid() with WNOHANG.</p>
+        <div class="detail">orchestrator.h · 262 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#4dabf718; color:var(--blue);">⬢</div>
+        <h3>POSIX IPC Layer</h3>
+        <p>Shared memory (shm_open/mmap), pipe-based message queues with select() timeouts, and named semaphores for worker coordination.</p>
+        <div class="detail">ipc.h · 256 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#b197fc18; color:var(--purple);">◈</div>
+        <h3>SQLite Metadata</h3>
+        <p>WAL mode, global mutex, RAII locks, busy timeouts (5s), and exponential backoff retries. Zero SQLITE_BUSY errors under load.</p>
+        <div class="detail">database.h · 753 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#ffd43b18; color:var(--yellow);">◇</div>
+        <h3>Crypto Pipeline</h3>
+        <p>AES-256-CBC encryption with per-job CSPRNG keys, random IV per chunk. SHA-256 integrity verification on every store and restore.</p>
+        <div class="detail">aes256.h + sha256.h · 276 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#ff6b6b18; color:var(--red);">◆</div>
+        <h3>Job Scheduler</h3>
+        <p>Priority queue (URGENT→LOW) with DAG dependency resolution. Cycle detection via BFS, topological ordering via Kahn's algorithm.</p>
+        <div class="detail">job_scheduler.h · 145 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#00e59918; color:var(--accent);">▣</div>
+        <h3>CoW Snapshots</h3>
+        <p>Hardlink-based copy-on-write snapshots for consistent backups. Automatic cleanup after job completion — no blocking on source.</p>
+        <div class="detail">snapshot.h · 174 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#4dabf718; color:var(--blue);">▦</div>
+        <h3>Compression Engine</h3>
+        <p>Dual-mode: LZ4 for speed, Zstandard for high compression ratio. Applied per-chunk before encryption in the storage pipeline.</p>
+        <div class="detail">compressor.h · 109 LOC</div>
+      </div>
+      <div class="arch-card reveal">
+        <div class="arch-icon" style="background:#b197fc18; color:var(--purple);">▤</div>
+        <h3>Restore Engine</h3>
+        <p>Full file restoration: retrieve manifests → decrypt → decompress → verify SHA-256. Integrity-only mode available via --verify.</p>
+        <div class="detail">restore_engine.h · 153 LOC</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA PIPELINE -->
+<section id="pipeline">
+  <div class="container">
+    <div class="section-label reveal">Processing</div>
+    <h2 class="section-title reveal">Backup Pipeline</h2>
+    <p class="section-desc reveal">Every file passes through a six-stage pipeline — from raw bytes to encrypted, compressed, deduplicated storage.</p>
+
+    <div class="flow-container reveal">
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-num">01</div>
+          <div class="flow-label">Snapshot</div>
+          <div class="flow-detail">Hardlink CoW</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">02</div>
+          <div class="flow-label">Chunk</div>
+          <div class="flow-detail">64KB Blocks</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">03</div>
+          <div class="flow-label">Hash</div>
+          <div class="flow-detail">SHA-256</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">04</div>
+          <div class="flow-label">Dedup</div>
+          <div class="flow-detail">Content-Address</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">05</div>
+          <div class="flow-label">Compress</div>
+          <div class="flow-detail">LZ4 / ZSTD</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">06</div>
+          <div class="flow-label">Encrypt</div>
+          <div class="flow-detail">AES-256-CBC</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Structures -->
+    <div style="margin-top: 80px;">
+      <div class="section-label reveal">Custom Implementations</div>
+      <h2 class="section-title reveal">Data Structures</h2>
+      <p class="section-desc reveal">Five hand-built data structures — no STL containers used for core algorithms.</p>
+
+      <div class="ds-grid reveal">
+        <div class="ds-card">
+          <div class="ds-name">HashMap</div>
+          <div class="ds-purpose">Open-addressing, linear probing, auto-rehash at 70%</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-name">PriorityQueue</div>
+          <div class="ds-purpose">Binary max-heap with custom comparator</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-name">DAG</div>
+          <div class="ds-purpose">Cycle detection, topological sort (Kahn's)</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-name">CircularBuffer</div>
+          <div class="ds-purpose">Thread-safe ring buffer with overwrite mode</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-name">B+ Tree</div>
+          <div class="ds-purpose">Order-64, leaf linked list, range queries</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS & TESTING -->
+<section id="testing">
+  <div class="container">
+    <div class="section-label reveal">Validation</div>
+    <h2 class="section-title reveal">Testing & Metrics</h2>
+
+    <div class="metrics-row reveal">
+      <div class="metric-card">
+        <div class="metric-number">4,211</div>
+        <div class="metric-label">Lines of C++</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">9<span class="metric-unit">/9</span></div>
+        <div class="metric-label">Tests Passing</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">0</div>
+        <div class="metric-label">Compiler Warnings</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-number">100<span class="metric-unit">%</span></div>
+        <div class="metric-label">Dedup Verified</div>
+      </div>
+    </div>
+
+    <div class="test-list reveal">
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Mixed directory backup — text, binary, nested dirs, duplicates</div>
+        <div class="test-tag">STORAGE</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Job listing — metadata persistence in SQLite</div>
+        <div class="test-tag">DATABASE</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">System statistics — chunk count, dedup tracking, byte totals</div>
+        <div class="test-tag">METRICS</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Integrity verification — all chunk files present, DB consistency</div>
+        <div class="test-tag">CRYPTO</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Full restore — decrypt → decompress → reassemble pipeline</div>
+        <div class="test-tag">RESTORE</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Byte-for-byte diff — SHA-256 integrity, zero data loss</div>
+        <div class="test-tag">INTEGRITY</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Cross-backup deduplication — same data → 0 new chunks stored</div>
+        <div class="test-tag">DEDUP</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">Multi-chunk file — 256KB split into 4 chunks, restored perfectly</div>
+        <div class="test-tag">CHUNKING</div>
+      </div>
+      <div class="test-item">
+        <div class="test-status">✓</div>
+        <div class="test-name">50-file batch — backup and restore with zero failures</div>
+        <div class="test-tag">SCALE</div>
+      </div>
+    </div>
+
+    <!-- Terminal -->
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="terminal-dot" style="background:#ff5f57"></div>
+        <div class="terminal-dot" style="background:#febc2e"></div>
+        <div class="terminal-dot" style="background:#28c840"></div>
+        <div class="terminal-title">terminal — make test</div>
+      </div>
+      <div class="terminal-body">
+        <span class="prompt">$</span> <span class="cmd">make</span><br>
+        <span class="output">g++ -std=c++17 -Wall -Wextra -O2 -I include src/main.cpp -o build/ecpb</span><br><br>
+        <span class="prompt">$</span> <span class="cmd">./build/ecpb</span> <span class="flag">--backup</span> <span class="cmd">/data/source</span> <span class="flag">--name</span> <span class="cmd">production_backup</span><br>
+        <span class="output">Backup completed: 50 files, 1.2 MB stored (0.4 MB after dedup)</span><br><br>
+        <span class="prompt">$</span> <span class="cmd">./build/ecpb</span> <span class="flag">--verify</span> <span class="cmd">1</span><br>
+        <span class="success">✓ All chunks verified. Backup integrity confirmed.</span><br><br>
+        <span class="prompt">$</span> <span class="cmd">./build/ecpb</span> <span class="flag">--restore</span> <span class="cmd">1</span> <span class="flag">--dest</span> <span class="cmd">/data/restored</span><br>
+        <span class="success">✓ Restore complete. 50 files, 0 errors.</span><br><br>
+        <span class="prompt">$</span> <span class="cmd">diff -r /data/source /data/restored</span><br>
+        <span class="success">✓ No differences found. Byte-perfect restore.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS DEMONSTRATED -->
+<section>
+  <div class="container">
+    <div class="section-label reveal">Expertise</div>
+    <h2 class="section-title reveal">Skills Demonstrated</h2>
+
+    <div class="skills-section reveal">
+      <div class="skill-group">
+        <div class="skill-group-title">Systems Programming</div>
+        <div class="skill-tags">
+          <div class="skill-tag">Process Management (fork/exec/waitpid)</div>
+          <div class="skill-tag">POSIX Shared Memory</div>
+          <div class="skill-tag">Named Semaphores</div>
+          <div class="skill-tag">Pipe-based IPC</div>
+          <div class="skill-tag">File I/O & Directory Traversal</div>
+          <div class="skill-tag">Signal Handling</div>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Data Structures & Algorithms</div>
+        <div class="skill-tags">
+          <div class="skill-tag">Hash Tables (Open Addressing)</div>
+          <div class="skill-tag">Binary Heaps</div>
+          <div class="skill-tag">B+ Trees</div>
+          <div class="skill-tag">Directed Acyclic Graphs</div>
+          <div class="skill-tag">Topological Sort</div>
+          <div class="skill-tag">Rolling Checksums</div>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Security & Storage</div>
+        <div class="skill-tags">
+          <div class="skill-tag">AES-256-CBC Encryption</div>
+          <div class="skill-tag">SHA-256 Integrity</div>
+          <div class="skill-tag">Content-Addressable Storage</div>
+          <div class="skill-tag">Deduplication</div>
+          <div class="skill-tag">LZ4 / ZSTD Compression</div>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Database & Concurrency</div>
+        <div class="skill-tags">
+          <div class="skill-tag">SQLite WAL Mode</div>
+          <div class="skill-tag">RAII Mutex Patterns</div>
+          <div class="skill-tag">Exponential Backoff</div>
+          <div class="skill-tag">Fork-safe DB Connections</div>
+          <div class="skill-tag">Thread-safe Logging</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-cta">Built from <em>scratch</em></div>
+    <p style="color:var(--text-dim); font-size: 14px;">4,211 lines of C++17 · Zero frameworks · Every data structure hand-implemented</p>
+    <div class="footer-links">
+      <a href="https://github.com/bshivaramakrishnan/file-backup-system" target="_blank">GitHub</a>
+      <a href="https://github.com/bshivaramakrishnan" target="_blank">All Projects</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

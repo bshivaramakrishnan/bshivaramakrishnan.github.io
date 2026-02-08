@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Networks Image Classifier — Deep Learning Grocery Recognition</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --bg-elevated: #111113;
+    --bg-card: #161618;
+    --bg-card-hover: #1c1c1f;
+    --border: #2a2a2e;
+    --border-subtle: #1e1e22;
+    --text: #e8e8ec;
+    --text-muted: #8b8b95;
+    --text-dim: #55555e;
+    --accent: #f59e0b;
+    --accent-dim: #f59e0b20;
+    --accent-glow: #f59e0b40;
+    --orange: #ff6b35;
+    --blue: #4dabf7;
+    --purple: #b197fc;
+    --red: #ff6b6b;
+    --yellow: #ffd43b;
+    --cyan: #22d3ee;
+    --green: #34d399;
+    --pink: #f472b6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(20px);
+    background: #0a0a0bcc;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .nav-brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .nav-brand span { color: var(--accent); }
+
+  .nav-links { display: flex; gap: 32px; }
+
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 100px;
+    position: relative;
+  }
+
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .hero-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 1.05;
+    font-weight: 400;
+    letter-spacing: -2px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--accent);
+    position: relative;
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 640px;
+    line-height: 1.8;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 30px var(--accent-glow);
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--text-muted);
+    background: var(--bg-elevated);
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-subtle);
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1s;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-value span { color: var(--accent); font-weight: 300; }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 120px 0;
+    position: relative;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .section-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 400;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+  }
+
+  .section-desc {
+    color: var(--text-muted);
+    font-size: 16px;
+    max-width: 600px;
+    margin-bottom: 64px;
+  }
+
+  /* ── TECH STACK ── */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 80px;
+  }
+
+  .tech-tag {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    padding: 16px 20px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+  }
+
+  .tech-tag:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+  }
+
+  .tech-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── MODULE CARDS ── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .module-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 32px;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .module-card:hover {
+    border-color: var(--border);
+    background: var(--bg-card-hover);
+    transform: translateY(-4px);
+  }
+
+  .module-card:hover::before { opacity: 1; }
+
+  .module-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .module-card h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .module-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .module-card .detail {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  /* ── APPROACH CARDS ── */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 80px;
+  }
+
+  .approach-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .approach-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+  }
+
+  .approach-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .approach-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .approach-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .approach-badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── FEATURE CARDS ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 32px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .feature-card:hover {
+    border-color: var(--border);
+    background: var(--bg-card-hover);
+    transform: translateY(-3px);
+  }
+
+  .feature-card:hover::before { opacity: 1; }
+
+  .feature-card .feat-icon {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .feature-card h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ── TERMINAL ── */
+  .terminal {
+    background: #0c0c0e;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 48px;
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #141416;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: 8px;
+  }
+
+  .terminal-body {
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  .terminal-body .prompt { color: var(--accent); }
+  .terminal-body .cmd { color: var(--text); }
+  .terminal-body .comment { color: var(--text-dim); }
+  .terminal-body .output { color: var(--text-muted); }
+  .terminal-body .success { color: var(--green); }
+  .terminal-body .flag { color: var(--orange); }
+  .terminal-body .warn { color: var(--accent); }
+
+  /* ── ARCHITECTURE ── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+  }
+
+  .arch-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .arch-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+  }
+
+  .arch-card .arch-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+  }
+
+  .arch-card h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  .arch-card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── PIPELINE FLOW ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 48px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .pipeline-step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    min-width: 160px;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .pipeline-step:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+  }
+
+  .pipeline-step .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .pipeline-step .step-icon { font-size: 28px; margin-bottom: 8px; }
+  .pipeline-step h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .pipeline-step p { font-size: 11px; color: var(--text-dim); }
+
+  .pipeline-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    color: var(--accent);
+    padding: 0 6px;
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  /* ── COMPLEXITY TABLE ── */
+  .complexity-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 32px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .complexity-table th,
+  .complexity-table td {
+    padding: 16px 24px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .complexity-table th {
+    background: var(--bg-elevated);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .complexity-table td {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .complexity-table tr:last-child td { border-bottom: none; }
+  .complexity-table tr:hover td { background: var(--bg-card-hover); }
+
+  .complexity-table code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 60px 0;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+
+  .footer-cta {
+    font-family: 'Instrument Serif', serif;
+    font-size: 36px;
+    font-weight: 400;
+    margin-bottom: 24px;
+  }
+
+  .footer-cta em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 16px;
+  }
+
+  .footer-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: color 0.3s;
+  }
+
+  .footer-links a:hover { color: var(--accent); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .container { padding: 0 24px; }
+    nav { padding: 16px 24px; }
+    .module-grid { grid-template-columns: 1fr; }
+    .approach-grid { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .arch-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-stats { flex-wrap: wrap; gap: 32px; }
+    .nav-links { display: none; }
+    .pipeline { gap: 0; }
+  }
+
+  @media (max-width: 600px) {
+    .hero-actions { flex-direction: column; }
+    .tech-grid { grid-template-columns: 1fr 1fr; }
+    .arch-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand"><span>NEURAL</span> CLASSIFIER</div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#models">Models</a>
+    <a href="#install">Installation</a>
+    <a href="https://github.com/bshivaramakrishnan/NEURAL_NETWORKS_IMAGE_CLASSIFIER" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Deep Learning · Computer Vision · Transfer Learning</div>
+    <h1 class="hero-title">Image<br><em>Classifier</em></h1>
+    <p class="hero-subtitle">
+      Deep learning-driven image classification system for grocery product recognition. Evaluates three CNN architectures — AlexNet, ShuffleNet, and a custom-built model — with data augmentation, transfer learning, and a browser-based interactive UI powered by MobileNet and TensorFlow.js.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/bshivaramakrishnan/NEURAL_NETWORKS_IMAGE_CLASSIFIER" target="_blank" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        View on GitHub
+      </a>
+      <a href="#install" class="btn btn-outline">Get Started</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-value">3<span>+</span></div>
+        <div class="stat-label">CNN Architectures</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">~50<span>K</span></div>
+        <div class="stat-label">Parameters (Custom)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">96<span>²</span></div>
+        <div class="stat-label">Input Resolution</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">2<span>×</span></div>
+        <div class="stat-label">Backend + Frontend</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="overview">
+  <div class="container">
+    <div class="section-label reveal">Technology Stack</div>
+    <h2 class="section-title reveal">Tools & Frameworks</h2>
+    <p class="section-desc reveal">A dual-mode system: Python backend for production training and a React frontend for interactive browser-based classification.</p>
+    <div class="tech-grid reveal">
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--accent)"></div>Python 3.8+</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--blue)"></div>TensorFlow / Keras</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--green)"></div>TensorFlow.js</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--purple)"></div>MobileNet v1</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--orange)"></div>AlexNet</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--cyan)"></div>ShuffleNet</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--red)"></div>Custom CNN</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--yellow)"></div>ImageDataGenerator</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--pink)"></div>React JSX</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--accent)"></div>Data Augmentation</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--blue)"></div>Transfer Learning</div>
+      <div class="tech-tag"><div class="tech-dot" style="background:var(--green)"></div>WebGL Acceleration</div>
+    </div>
+
+    <!-- Dual Approach -->
+    <div class="section-label reveal" style="margin-top: 80px;">Dual System</div>
+    <h2 class="section-title reveal">Two Ways to Classify</h2>
+    <p class="section-desc reveal">Choose the approach that fits your use case — from quick browser demos to full production training pipelines.</p>
+
+    <div class="approach-grid reveal">
+      <div class="approach-card">
+        <div class="approach-icon">⚙️</div>
+        <div class="approach-name">Python Backend</div>
+        <div class="approach-desc">Train a custom 50K-param CNN from scratch using Keras.<br>Best for large datasets and production deployment.</div>
+        <div class="approach-badge" style="background:var(--blue);background:rgba(77,171,247,0.12);color:var(--blue);">Offline · CPU/GPU</div>
+      </div>
+      <div class="approach-card">
+        <div class="approach-icon">🖥️</div>
+        <div class="approach-name">Browser Frontend</div>
+        <div class="approach-desc">Interactive React UI with TensorFlow.js + MobileNet.<br>Train and predict entirely in the browser — no server.</div>
+        <div class="approach-badge" style="background:rgba(52,211,153,0.12);color:var(--green);">Zero Install · WebGL</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-label reveal">System Design</div>
+    <h2 class="section-title reveal">Architecture Overview</h2>
+    <p class="section-desc reveal">A modular pipeline from raw images to real-time predictions, designed for both research comparison and practical deployment.</p>
+
+    <div class="arch-grid reveal">
+      <div class="arch-card">
+        <div class="arch-icon">📷</div>
+        <h4>Data Ingestion</h4>
+        <p>Load, resize, normalize images. Augment with rotation, flip, zoom, brightness</p>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🧠</div>
+        <h4>Feature Extraction</h4>
+        <p>Conv layers extract edges, textures, shapes. BatchNorm for stability</p>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">🎯</div>
+        <h4>Classification Head</h4>
+        <p>GlobalAvgPool → Dense → Dropout → Softmax for N-class output</p>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">📊</div>
+        <h4>Evaluation</h4>
+        <p>Accuracy, precision, recall, F1-score. Top-3 confidence output</p>
+      </div>
+    </div>
+
+    <!-- Training Pipeline -->
+    <div class="reveal" style="margin-top: 80px;">
+      <div class="section-label">Pipeline</div>
+      <h2 class="section-title">Training Flow</h2>
+    </div>
+    <div class="pipeline reveal">
+      <div class="pipeline-step">
+        <div class="step-num">Step 1</div>
+        <div class="step-icon">🗂️</div>
+        <h4>Dataset</h4>
+        <p>Organized by class folders</p>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-num">Step 2</div>
+        <div class="step-icon">🔄</div>
+        <h4>Augmentation</h4>
+        <p>Rotate, flip, zoom, shift</p>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-num">Step 3</div>
+        <div class="step-icon">🧠</div>
+        <h4>Training</h4>
+        <p>CNN forward + backprop</p>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-num">Step 4</div>
+        <div class="step-icon">✅</div>
+        <h4>Validation</h4>
+        <p>EarlyStopping + LR decay</p>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-num">Step 5</div>
+        <div class="step-icon">💾</div>
+        <h4>Export</h4>
+        <p>.keras model + labels.json</p>
+      </div>
+    </div>
+
+    <!-- Model Comparison Table -->
+    <div class="reveal" style="margin-top: 80px;">
+      <div class="section-label">Comparison</div>
+      <h2 class="section-title">Model Benchmarks</h2>
+      
+      <table class="complexity-table">
+        <thead>
+          <tr>
+            <th>Architecture</th>
+            <th>Parameters</th>
+            <th>Input Size</th>
+            <th>Strength</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>AlexNet</td>
+            <td><code>~60M</code></td>
+            <td>224 × 224</td>
+            <td>High accuracy, deep feature extraction</td>
+          </tr>
+          <tr>
+            <td>ShuffleNet</td>
+            <td><code>~1.4M</code></td>
+            <td>224 × 224</td>
+            <td>Lightweight, edge-device friendly</td>
+          </tr>
+          <tr>
+            <td>Custom CNN</td>
+            <td><code>~50K</code></td>
+            <td>96 × 96</td>
+            <td>Ultra-compact, domain-optimized</td>
+          </tr>
+          <tr>
+            <td>MobileNet (Frontend)</td>
+            <td><code>~475K</code></td>
+            <td>224 × 224</td>
+            <td>Transfer learning, browser inference</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES / MODELS -->
+<section id="models">
+  <div class="container">
+    <div class="section-label reveal">CNN Architectures</div>
+    <h2 class="section-title reveal">Models Explored</h2>
+    <p class="section-desc reveal">Three architectures evaluated for grocery product classification, each with distinct trade-offs in accuracy, speed, and resource usage.</p>
+
+    <div class="module-grid">
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:#f59e0b18; color:var(--accent);">🏛️</div>
+        <h3>AlexNet</h3>
+        <p>The pioneer of deep CNNs. Five convolutional layers with max pooling, followed by three fully connected layers. Uses dropout and data augmentation to combat overfitting.</p>
+        <div class="detail">~60M params · High accuracy · GPU recommended</div>
+      </div>
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:#4dabf718; color:var(--blue);">⚡</div>
+        <h3>ShuffleNet</h3>
+        <p>Designed for mobile and edge devices. Uses pointwise group convolution and channel shuffle operations for computational efficiency while maintaining competitive accuracy.</p>
+        <div class="detail">~1.4M params · Edge-friendly · CPU viable</div>
+      </div>
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:#34d39918; color:var(--green);">🔧</div>
+        <h3>Custom CNN</h3>
+        <p>Handcrafted 3-block architecture tailored to the grocery dataset. Uses BatchNorm, GlobalAvgPooling, and dropout for a sub-50K parameter model that trains in minutes on CPU.</p>
+        <div class="detail">~50K params · Domain-specific · Fastest training</div>
+      </div>
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:#b197fc18; color:var(--purple);">🌐</div>
+        <h3>MobileNet (Frontend)</h3>
+        <p>Pretrained on ImageNet, used as a frozen feature extractor in the browser. A lightweight dense head is trained on your images via TensorFlow.js for real-time inference.</p>
+        <div class="detail">Transfer learning · Browser-native · WebGL</div>
+      </div>
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:#22d3ee18; color:var(--cyan);">🔄</div>
+        <h3>Data Augmentation</h3>
+        <p>Rotation, width/height shift, shear, zoom, horizontal flip, and brightness range applied during training to improve generalization and prevent overfitting on small datasets.</p>
+        <div class="detail">Keras ImageDataGenerator · Runtime augmentation</div>
+      </div>
+      <div class="module-card reveal">
+        <div class="module-icon" style="background:#ff6b6b18; color:var(--red);">🎓</div>
+        <h3>Transfer Learning</h3>
+        <p>Fine-tune pre-trained models on the grocery dataset. Leverages representations learned from millions of images to achieve high accuracy with limited domain-specific data.</p>
+        <div class="detail">ImageNet weights · Feature reuse · Fast convergence</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KEY FEATURES -->
+<section>
+  <div class="container">
+    <div class="section-label reveal">Capabilities</div>
+    <h2 class="section-title reveal">Key Features</h2>
+    <p class="section-desc reveal">Built for both learning and production, with smart defaults that make training effortless.</p>
+
+    <div class="feature-grid reveal">
+      <div class="feature-card">
+        <div class="feat-icon">📈</div>
+        <h3>Smart Training</h3>
+        <p>EarlyStopping prevents overfitting, ReduceLROnPlateau auto-tunes learning rate, and ModelCheckpoint saves only the best performing weights.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🎯</div>
+        <h3>Top-K Predictions</h3>
+        <p>Outputs top-3 predicted classes with confidence percentages. Visual confidence bars in the frontend for intuitive interpretation.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🖱️</div>
+        <h3>Drag & Drop UI</h3>
+        <p>Browser frontend supports drag-and-drop image upload, real-time training progress with accuracy charts, and instant classification.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">📦</div>
+        <h3>Portable Model</h3>
+        <p>Trained model exports as .keras file with labels.json mapping. Drop into any Python environment or convert to TFLite for mobile deployment.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🧮</div>
+        <h3>Ultra-Lightweight</h3>
+        <p>Custom CNN is only ~50K parameters (~200KB on disk). Trains from scratch in minutes on CPU. No GPU required for any workflow.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🔀</div>
+        <h3>Auto Train/Val Split</h3>
+        <p>80/20 train-validation split applied automatically. No manual data organization needed — just drop images into class folders and run.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALLATION -->
+<section id="install">
+  <div class="container">
+    <div class="section-label reveal">Setup</div>
+    <h2 class="section-title reveal">Backend — Python</h2>
+    <p class="section-desc reveal">Train models offline with the full Python pipeline. Works on any machine with Python 3.8+.</p>
+
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="terminal-dot" style="background:#ff5f57"></div>
+        <div class="terminal-dot" style="background:#febc2e"></div>
+        <div class="terminal-dot" style="background:#28c840"></div>
+        <div class="terminal-title">terminal — python backend</div>
+      </div>
+      <div class="terminal-body">
+        <span class="comment"># Clone the repository</span><br>
+        <span class="prompt">$</span> <span class="cmd">git clone https://github.com/bshivaramakrishnan/NEURAL_NETWORKS_IMAGE_CLASSIFIER.git</span><br>
+        <span class="prompt">$</span> <span class="cmd">cd NEURAL_NETWORKS_IMAGE_CLASSIFIER</span><br><br>
+        <span class="comment"># Create virtual environment</span><br>
+        <span class="prompt">$</span> <span class="cmd">python -m venv venv</span><br>
+        <span class="prompt">$</span> <span class="cmd">source venv/bin/activate</span><br><br>
+        <span class="comment"># Install dependencies</span><br>
+        <span class="prompt">$</span> <span class="cmd">pip install -r requirements.txt</span><br>
+        <span class="output">Installing tensorflow, numpy...</span><br>
+        <span class="success">✓ All dependencies installed</span><br><br>
+        <span class="comment"># Organize dataset (one folder per class)</span><br>
+        <span class="prompt">$</span> <span class="cmd">mkdir -p dataset/apple dataset/banana dataset/orange</span><br>
+        <span class="comment"># Copy images into each class folder...</span><br><br>
+        <span class="comment"># Train the model</span><br>
+        <span class="prompt">$</span> <span class="cmd">python train.py</span><br>
+        <span class="output">🍎 Found 3 classes: ['apple', 'banana', 'orange']</span><br>
+        <span class="output">📦 Model size: ~50,162 parameters (196 KB)</span><br>
+        <span class="output">🚀 Training...</span><br>
+        <span class="output">Epoch 12/30 — val_accuracy: 0.9417</span><br>
+        <span class="success">✓ Best validation accuracy: 94.17%</span><br>
+        <span class="success">✓ Model saved to: fruit_model.keras</span><br><br>
+        <span class="comment"># Run predictions</span><br>
+        <span class="prompt">$</span> <span class="cmd">python predict.py <span class="flag">test_photo.jpg</span></span><br>
+        <span class="output">🖼  test_photo.jpg</span><br>
+        <span class="success">   ✅ apple           94.2%</span><br>
+        <span class="output">      orange          3.8%</span><br>
+        <span class="output">      banana          2.0%</span>
+      </div>
+    </div>
+
+    <!-- Frontend Setup -->
+    <div style="margin-top: 80px;">
+      <div class="section-label reveal">Browser UI</div>
+      <h2 class="section-title reveal">Frontend — React + TensorFlow.js</h2>
+      <p class="section-desc reveal">Zero-install interactive classifier. Train and predict right in the browser using MobileNet transfer learning.</p>
+
+      <div class="terminal reveal">
+        <div class="terminal-bar">
+          <div class="terminal-dot" style="background:#ff5f57"></div>
+          <div class="terminal-dot" style="background:#febc2e"></div>
+          <div class="terminal-dot" style="background:#28c840"></div>
+          <div class="terminal-title">terminal — frontend setup (vite)</div>
+        </div>
+        <div class="terminal-body">
+          <span class="comment"># Create a new React project</span><br>
+          <span class="prompt">$</span> <span class="cmd">npm create vite@latest classifier-ui <span class="flag">-- --template react</span></span><br>
+          <span class="prompt">$</span> <span class="cmd">cd classifier-ui</span><br><br>
+          <span class="comment"># Copy the app component</span><br>
+          <span class="prompt">$</span> <span class="cmd">cp ../app.jsx src/App.jsx</span><br><br>
+          <span class="comment"># Install and run</span><br>
+          <span class="prompt">$</span> <span class="cmd">npm install && npm run dev</span><br>
+          <span class="output">VITE v5.x ready in 400ms</span><br>
+          <span class="success">➜  Local:   http://localhost:5173/</span><br><br>
+          <span class="comment"># Or open app.jsx directly in Claude Artifacts</span><br>
+          <span class="warn">⚡ No setup needed — runs as-is in the browser</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output Structure -->
+    <div style="margin-top: 80px;">
+      <div class="section-label reveal">Project Structure</div>
+      <h2 class="section-title reveal">File Organization</h2>
+
+      <div class="feature-grid reveal">
+        <div class="feature-card">
+          <div class="feat-icon">🐍</div>
+          <h3>Backend Files</h3>
+          <p>
+            <code style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--accent);">
+            train.py<br>
+            predict.py<br>
+            requirements.txt
+            </code>
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">⚛️</div>
+          <h3>Frontend Files</h3>
+          <p>
+            <code style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--blue);">
+            app.jsx
+            </code><br>
+            <span style="font-size: 12px; color: var(--text-dim);">Self-contained React component</span>
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">🗂️</div>
+          <h3>Dataset Layout</h3>
+          <p>
+            <code style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--green);">
+            dataset/<br>
+            &nbsp;&nbsp;apple/<br>
+            &nbsp;&nbsp;banana/<br>
+            &nbsp;&nbsp;orange/
+            </code>
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feat-icon">💾</div>
+          <h3>Generated Outputs</h3>
+          <p>
+            <code style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--purple);">
+            fruit_model.keras<br>
+            labels.json
+            </code><br>
+            <span style="font-size: 12px; color: var(--text-dim);">Auto-saved after training</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section>
+  <div class="container">
+    <div class="section-label reveal">Applications</div>
+    <h2 class="section-title reveal">Use Cases</h2>
+
+    <div class="feature-grid reveal">
+      <div class="feature-card">
+        <div class="feat-icon">🛒</div>
+        <h3>Retail Inventory</h3>
+        <p>Automate product detection and inventory counting in supermarkets. Reduce manual stocktaking and human error in large retail environments.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🤖</div>
+        <h3>Self-Checkout</h3>
+        <p>Enable camera-based product recognition at self-checkout kiosks. Identify fruits and vegetables without barcode scanning.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">📱</div>
+        <h3>Consumer Apps</h3>
+        <p>Build mobile apps that identify grocery items from photos. Help users track nutrition, compare prices, or find recipes by ingredient.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🎓</div>
+        <h3>Educational Tool</h3>
+        <p>Compare CNN architectures hands-on. Understand trade-offs between model size, accuracy, and inference speed across AlexNet, ShuffleNet, and custom models.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">📊</div>
+        <h3>Retail Analytics</h3>
+        <p>Track product visibility and shelf placement using image classification. Generate insights on product positioning and customer interaction patterns.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🌾</div>
+        <h3>Agriculture & Sorting</h3>
+        <p>Classify produce quality and variety in agricultural processing. Automate sorting pipelines for fruits and vegetables by type and ripeness.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-cta">Classify at the <em>speed of sight</em></div>
+    <p style="color:var(--text-dim); font-size: 14px;">Python + React · 3 CNN Architectures · Browser Inference · Transfer Learning</p>
+    <div class="footer-links">
+      <a href="https://github.com/bshivaramakrishnan/NEURAL_NETWORKS_IMAGE_CLASSIFIER" target="_blank">GitHub</a>
+      <a href="https://github.com/bshivaramakrishnan" target="_blank">All Projects</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

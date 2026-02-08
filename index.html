@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shivaramakrishnan B — Systems Engineer & Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #06060a;
+  --bg-elevated: #0d0d12;
+  --bg-card: #111118;
+  --bg-card-hover: #16161f;
+  --border: #1e1e2a;
+  --border-subtle: #141420;
+  --text: #e4e4ef;
+  --text-muted: #8585a0;
+  --text-dim: #4a4a65;
+  --accent: #00e599;
+  --accent-dim: rgba(0,229,153,0.08);
+  --accent-glow: rgba(0,229,153,0.25);
+  --orange: #ff6b35;
+  --blue: #4dabf7;
+  --purple: #b197fc;
+  --red: #ff6b6b;
+  --yellow: #ffd43b;
+  --cyan: #22d3ee;
+  --amber: #f59e0b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Grain */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Dot grid */
+.dot-grid {
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--border-subtle) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(24px) saturate(1.8);
+  background: rgba(6,6,10,0.75);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.nav-name span { color: var(--accent); }
+
+.nav-links { display: flex; gap: 28px; }
+.nav-links a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-decoration: none;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: color 0.3s;
+  position: relative;
+}
+.nav-links a:hover { color: var(--accent); }
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+.nav-links a:hover::after { width: 100%; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 64px;
+  position: relative;
+}
+
+.hero-glow {
+  position: absolute;
+  top: 15%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,229,153,0.06), transparent 65%);
+  pointer-events: none;
+}
+
+.hero-glow-2 {
+  position: absolute;
+  bottom: 10%;
+  left: -15%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(77,171,247,0.04), transparent 65%);
+  pointer-events: none;
+}
+
+.hero-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  animation: fadeSlide 0.7s ease forwards 0.15s;
+}
+.hero-tag::before {
+  content: '';
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.hero-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(52px, 8vw, 110px);
+  line-height: 1.0;
+  font-weight: 400;
+  letter-spacing: -3px;
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: fadeSlide 0.7s ease forwards 0.3s;
+}
+.hero-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.hero-desc {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 540px;
+  line-height: 1.85;
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: fadeSlide 0.7s ease forwards 0.45s;
+}
+
+.hero-btns {
+  display: flex;
+  gap: 14px;
+  opacity: 0;
+  animation: fadeSlide 0.7s ease forwards 0.6s;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 26px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.3s;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+.btn-primary:hover {
+  box-shadow: 0 0 36px var(--accent-glow);
+  transform: translateY(-2px);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+  border-color: var(--text-dim);
+  background: var(--bg-elevated);
+}
+
+.hero-metrics {
+  display: flex;
+  gap: 56px;
+  margin-top: 72px;
+  padding-top: 36px;
+  border-top: 1px solid var(--border-subtle);
+  opacity: 0;
+  animation: fadeSlide 0.7s ease forwards 0.8s;
+}
+.metric { display: flex; flex-direction: column; }
+.metric-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+}
+.metric-val span { color: var(--accent); font-weight: 300; }
+.metric-lbl {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+/* ── SECTION STYLING ── */
+section { padding: 110px 0; position: relative; }
+
+.sec-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sec-tag::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.sec-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(28px, 3.5vw, 48px);
+  font-weight: 400;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.sec-desc {
+  color: var(--text-muted);
+  font-size: 15px;
+  max-width: 500px;
+  margin-bottom: 56px;
+}
+
+/* ── TECH STACK ── */
+.stack-area {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.stack-group-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.stack-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stack-tag {
+  padding: 10px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+.stack-tag:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  transform: translateY(-2px);
+}
+.stack-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.focus-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 36px;
+  margin-top: 40px;
+  position: relative;
+  overflow: hidden;
+}
+.focus-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--blue), var(--purple));
+}
+.focus-card h3 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 12px;
+}
+.focus-card h3 em { color: var(--accent); font-style: italic; }
+.focus-card p {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 700px;
+}
+
+/* ── PROJECTS ── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.project-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 36px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-accent, var(--accent));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.project-card:hover {
+  border-color: var(--border);
+  background: var(--bg-card-hover);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.project-card:hover::before { opacity: 1; }
+
+.project-card:hover .proj-arrow {
+  transform: translate(3px, -3px);
+  color: var(--accent);
+}
+
+.proj-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.proj-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.proj-arrow {
+  font-size: 20px;
+  color: var(--text-dim);
+  transition: all 0.3s;
+  margin-top: 4px;
+}
+
+.proj-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.proj-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  flex: 1;
+}
+
+.proj-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.proj-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+  letter-spacing: 0.5px;
+}
+
+.proj-stat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* ── FOOTER ── */
+footer {
+  padding: 56px 0;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+.footer-line {
+  font-family: 'Instrument Serif', serif;
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+.footer-line em { color: var(--accent); font-style: italic; }
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+}
+.footer-links a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: color 0.3s;
+}
+.footer-links a:hover { color: var(--accent); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: all 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.reveal.vis {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .container { padding: 0 20px; }
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  .projects-grid { grid-template-columns: 1fr; }
+  .hero-metrics { flex-wrap: wrap; gap: 28px; }
+}
+@media (max-width: 600px) {
+  .hero-btns { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="dot-grid"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-name"><span>B.</span> Shivaramakrishnan</div>
+  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="#stack">Stack</a>
+    <a href="#projects">Projects</a>
+    <a href="https://github.com/bshivaramakrishnan" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
+  <div class="container">
+    <div class="hero-tag">Software Engineer · Systems Thinker</div>
+    <h1 class="hero-title">Building systems<br>from <em>first principles</em></h1>
+    <p class="hero-desc">
+      Software engineer specializing in C++ systems programming, distributed infrastructure, and AI-driven tooling. I build things from scratch to understand them deeply — from custom data structures to full backup pipelines and RAG engines.
+    </p>
+    <div class="hero-btns">
+      <a href="#projects" class="btn btn-primary">View Projects</a>
+      <a href="https://github.com/bshivaramakrishnan" target="_blank" class="btn btn-ghost">GitHub Profile</a>
+    </div>
+    <div class="hero-metrics">
+      <div class="metric">
+        <div class="metric-val">6<span>+</span></div>
+        <div class="metric-lbl">Projects Shipped</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">C++<span>17</span></div>
+        <div class="metric-lbl">Primary Language</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">L2L</div>
+        <div class="metric-lbl">Low-Level Focus</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val">MS<span>→</span></div>
+        <div class="metric-lbl">CS Grad Bound</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT / TECH STACK -->
+<section id="stack">
+  <div class="container">
+    <div class="sec-tag reveal">Technology Stack</div>
+    <h2 class="sec-title reveal">What I work with</h2>
+    <p class="sec-desc reveal">Rooted in systems programming. Expanding into distributed systems, AI engineering, and everything in between.</p>
+
+    <div class="stack-area reveal">
+      <div>
+        <div class="stack-group-label">Systems & Core</div>
+        <div class="stack-tags">
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--blue)"></div>C++17</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--accent)"></div>Python</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--orange)"></div>POSIX APIs</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--purple)"></div>fork/exec/IPC</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--yellow)"></div>Shared Memory</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--red)"></div>Semaphores</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--cyan)"></div>Socket Programming</div>
+        </div>
+      </div>
+      <div>
+        <div class="stack-group-label">Data & Databases</div>
+        <div class="stack-tags">
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--purple)"></div>PostgreSQL</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--blue)"></div>SQLite</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--accent)"></div>Neo4j</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--orange)"></div>Qdrant</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--yellow)"></div>Custom HashMaps</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--red)"></div>B+ Trees</div>
+        </div>
+      </div>
+      <div>
+        <div class="stack-group-label">AI / ML & Backend</div>
+        <div class="stack-tags">
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--amber)"></div>PyTorch</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--blue)"></div>TensorFlow</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--accent)"></div>Claude API / RAG</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--purple)"></div>Node.js</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--orange)"></div>Docker</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--cyan)"></div>CMake / Make</div>
+        </div>
+      </div>
+      <div>
+        <div class="stack-group-label">Security & Infra</div>
+        <div class="stack-tags">
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--yellow)"></div>AES-256 / SHA-256</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--red)"></div>OpenSSL</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--blue)"></div>LZ4 / ZSTD</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--accent)"></div>Consistent Hashing</div>
+          <div class="stack-tag"><div class="stack-dot" style="background:var(--purple)"></div>Prometheus</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="focus-card reveal">
+      <h3>Progressively learning <em>System Architecture</em></h3>
+      <p>
+        I'm drawn to understanding how systems work at their lowest levels — memory layouts, process lifecycles, network protocols, and the data structures that make it all efficient. Every project I build starts from first principles: custom hash maps instead of STL, fork()/exec() instead of thread pools, hand-rolled protocols instead of frameworks. This isn't just about building — it's about deeply understanding system design, low-level architecture, and the trade-offs that shape production infrastructure. Currently expanding into distributed systems, consensus algorithms, and large-scale system design patterns.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="container">
+    <div class="sec-tag reveal">Selected Work</div>
+    <h2 class="sec-title reveal">Projects</h2>
+    <p class="sec-desc reveal">Each project is a deep dive — built from scratch to understand the fundamentals.</p>
+
+    <div class="projects-grid">
+
+      <!-- Enterprise Backup System -->
+      <a href="./projects/backup-system.html" class="project-card reveal" style="--card-accent: var(--accent);">
+        <div class="proj-head">
+          <div class="proj-icon" style="background:var(--accent-dim); color:var(--accent);">⬡</div>
+          <div class="proj-arrow">↗</div>
+        </div>
+        <div class="proj-title">Enterprise Backup System</div>
+        <div class="proj-desc">Chunk-based distributed backup architecture in C++17. Content-addressable deduplication, AES-256 encryption, multi-process orchestration via fork()/exec(), and five custom data structures — zero frameworks.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">C++17</span>
+          <span class="proj-tag">POSIX IPC</span>
+          <span class="proj-tag">AES-256</span>
+          <span class="proj-tag">SQLite</span>
+          <span class="proj-tag">LZ4/ZSTD</span>
+        </div>
+        <div class="proj-stat">4,211 LOC · 23 files · 9/9 tests passing</div>
+      </a>
+
+      <!-- CodeBase RAG Engine -->
+      <a href="./projects/codebase-rag.html" class="project-card reveal" style="--card-accent: var(--blue);">
+        <div class="proj-head">
+          <div class="proj-icon" style="background:rgba(77,171,247,0.1); color:var(--blue);">⬢</div>
+          <div class="proj-arrow">↗</div>
+        </div>
+        <div class="proj-title">CodeBase RAG Engine</div>
+        <div class="proj-desc">Hybrid RAG system combining Neo4j graph traversals with Qdrant vector search and Claude AI. Turns any legacy codebase into a searchable knowledge base with structural + semantic queries across 30+ languages.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">Node.js</span>
+          <span class="proj-tag">Neo4j</span>
+          <span class="proj-tag">Qdrant</span>
+          <span class="proj-tag">Claude API</span>
+          <span class="proj-tag">SSE</span>
+        </div>
+        <div class="proj-stat">17 files · 19 API endpoints · 30+ languages</div>
+      </a>
+
+      <!-- Distributed Cache -->
+      <a href="./projects/distributed-cache.html" class="project-card reveal" style="--card-accent: var(--cyan);">
+        <div class="proj-head">
+          <div class="proj-icon" style="background:rgba(34,211,238,0.1); color:var(--cyan);">◈</div>
+          <div class="proj-arrow">↗</div>
+        </div>
+        <div class="proj-title">Distributed Cache System</div>
+        <div class="proj-desc">High-performance caching with LRU eviction, TTL expiration, consistent hashing with virtual nodes, sharded locking, quorum-based consistency, and Prometheus metrics — all in modern C++17.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">C++17</span>
+          <span class="proj-tag">Consistent Hashing</span>
+          <span class="proj-tag">LRU</span>
+          <span class="proj-tag">Quorum</span>
+          <span class="proj-tag">Prometheus</span>
+        </div>
+        <div class="proj-stat">O(1) LRU · 16+ shards · Cross-platform</div>
+      </a>
+
+      <!-- AI TCP Transfer -->
+      <a href="./projects/ai-tcp-transfer.html" class="project-card reveal" style="--card-accent: var(--purple);">
+        <div class="proj-head">
+          <div class="proj-icon" style="background:rgba(177,151,252,0.1); color:var(--purple);">◇</div>
+          <div class="proj-arrow">↗</div>
+        </div>
+        <div class="proj-title">AI-Optimized TCP Transfer</div>
+        <div class="proj-desc">File transfer system using Deep Q-Networks for adaptive congestion control. Custom sliding window protocol, EWMA-based RTT estimation, zero-copy I/O, and parallel connection pooling.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">Python</span>
+          <span class="proj-tag">PyTorch</span>
+          <span class="proj-tag">DQN</span>
+          <span class="proj-tag">TCP</span>
+          <span class="proj-tag">SACK</span>
+        </div>
+        <div class="proj-stat">8+ modules · DQN agent · 5/5 tests passing</div>
+      </a>
+
+      <!-- Jarvis CLI -->
+      <a href="./projects/jarvis-cli.html" class="project-card reveal" style="--card-accent: var(--yellow);">
+        <div class="proj-head">
+          <div class="proj-icon" style="background:rgba(255,212,59,0.1); color:var(--yellow);">◆</div>
+          <div class="proj-arrow">↗</div>
+        </div>
+        <div class="proj-title">Jarvis CLI</div>
+        <div class="proj-desc">Cross-platform developer assistant bundling Git branch management, file transfers, system monitoring, AI-powered commit messages, database exploration, and process management in one unified CLI.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">Python</span>
+          <span class="proj-tag">OpenAI</span>
+          <span class="proj-tag">SQLite</span>
+          <span class="proj-tag">SFTP</span>
+          <span class="proj-tag">Cross-platform</span>
+        </div>
+        <div class="proj-stat">7 modules · 3 platforms · AI-powered</div>
+      </a>
+
+      <!-- Neural Network Classifier -->
+      <a href="./projects/neural-classifier.html" class="project-card reveal" style="--card-accent: var(--amber);">
+        <div class="proj-head">
+          <div class="proj-icon" style="background:rgba(245,158,11,0.1); color:var(--amber);">▣</div>
+          <div class="proj-arrow">↗</div>
+        </div>
+        <div class="proj-title">Neural Networks Image Classifier</div>
+        <div class="proj-desc">Deep learning image classification evaluating AlexNet, ShuffleNet, and a custom 50K-param CNN. Includes a React + TensorFlow.js browser UI with MobileNet transfer learning for zero-install inference.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">TensorFlow</span>
+          <span class="proj-tag">Keras</span>
+          <span class="proj-tag">TF.js</span>
+          <span class="proj-tag">React</span>
+          <span class="proj-tag">MobileNet</span>
+        </div>
+        <div class="proj-stat">3 architectures · ~50K params · Browser + Python</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-line">Built from <em>scratch</em>, always.</div>
+    <p style="color:var(--text-dim); font-size: 13px; margin-bottom: 16px;">Shivaramakrishnan B · Software Engineer · Systems Programming</p>
+    <div class="footer-links">
+      <a href="https://github.com/bshivaramakrishnan" target="_blank">GitHub</a>
+      <a href="mailto:bshivaramakrishnan@example.com">Email</a>
+      <a href="#projects">Projects</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
